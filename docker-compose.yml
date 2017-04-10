@@ -1,0 +1,51 @@
+version: "2"
+
+networks:
+    code:
+        driver: bridge
+    internal:
+        driver: bridge
+
+services:
+    web:
+        image: nginx:latest
+        ports:
+            - "8080:8080"
+        volumes:
+            - ./code:/code
+            - ./conf/nginx/site.conf:/etc/nginx/conf.d/site.conf
+        networks:
+            - code
+    php:
+        image: php:7-fpm
+        volumes:
+            - ./code:/code
+            - ./conf/php/log.conf:/usr/local/etc/php-fpm.d/zz-log.conf
+        networks:
+            - code
+            - internal
+    redis:
+        image: redis:alpine
+        mem_limit: 128M
+        expose:
+            - "6379"
+        networks:
+            - internal
+    db:
+        image: mysql:5.7
+        expose:
+          - "3308"
+        volumes:
+          - /var/lib/mysql
+          - ./conf/mysql:/etc/mysql/conf.d
+        networks:
+          - internal
+
+    logstash:
+        image: sebp/elk
+        ports:
+          - "5601:5601"
+          - "9200:9200"
+          - "5044:5044"
+        networks:
+          - internal
